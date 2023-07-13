@@ -6,28 +6,24 @@ import pickle
 random.seed(42)
 
 # size of search space
-N = 1000000
+N = 100000
 
 search_space = []
 i = 0
 while i < N:
     """
     Generate a random architecture:
-    r - num of layer repetitions (dim=1, n_val=2)
     q - single-qubit parametric gates (dim=6, n_val=2)
-    c - categories of entangled gates (dim=6, n_val=1)
     p - positions of entangled gates (dim=6, n_val=5)
     """
-    r = [random.randint(0, 1)]
     q = [random.randint(0, 1) for _ in range(6)]
-    c = [random.randint(0, 0) for _ in range(6)]
     p = [random.choice([1, 2, 3, 4, 5]),
          random.choice([0, 2, 3, 4, 5]),
          random.choice([0, 1, 3, 4, 5]),
          random.choice([0, 1, 2, 4, 5]),
          random.choice([0, 1, 2, 3, 5]),
          random.choice([0, 1, 2, 3, 4])]
-    arch = r + q + c + p
+    arch = q + p
 
     if arch in search_space:
         continue

@@ -49,11 +49,11 @@ class Node:
         self.good_kid_data.clear()
 
 
-    def put_in_bag(self, net, energy):
+    def put_in_bag(self, net, energyabs):
         assert type(net) == type([])
-        assert type(energy) == type(float(0.1))
+        assert type(energyabs) == type(float(0.1))
         net_k = json.dumps(net)
-        self.bag[net_k] = energy
+        self.bag[net_k] = energyabs
 
 
     def get_name(self):

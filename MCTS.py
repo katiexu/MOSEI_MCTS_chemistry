@@ -41,8 +41,8 @@ class MCTS:
         self.TOTAL_SEND = 0
         self.TOTAL_RECV = 0
         self.ITERATION = 0
-        self.MIN_ENERGY = 0
-        self.MIN_SAMPNUM = 0
+        self.MAX_ENERGYABS = 0
+        self.MAX_SAMPNUM = 0
         self.sample_nodes = []
 
         # initialize a full tree
@@ -140,8 +140,9 @@ class MCTS:
                 print("translated to:\n{}".format(design))
                 print("\nstart training:")
                 energy = float(Scheme(design))
-                self.DISPATCHED_JOB[job_str] = energy
-                self.samples[job_str] = energy
+                energyabs = abs(energy)
+                self.DISPATCHED_JOB[job_str] = energyabs
+                self.samples[job_str] = energyabs
                 self.energy_list.append(energy)
                 print("energy: {}".format(energy))
 
@@ -151,11 +152,11 @@ class MCTS:
 
                 print("\nresults of current energy saved")
 
-                if energy < self.MIN_ENERGY:
-                    self.MIN_ENERGY = energy
-                    self.MIN_SAMPNUM = len(self.samples)
+                if energyabs > self.MAX_ENERGYABS:
+                    self.MAX_ENERGYABS = energyabs
+                    self.MAX_SAMPNUM = len(self.samples)
 
-                print("current min_energy: {}({} sample)".format(self.MIN_ENERGY, num2ord(self.MIN_SAMPNUM)))
+                print("current min_energy: {}({} sample)".format((-1)*(self.MAX_ENERGYABS), num2ord(self.MAX_SAMPNUM)))
                 print("current number of samples: {}".format(len(self.samples)))
 
             except Exception as e:

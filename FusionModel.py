@@ -18,14 +18,8 @@ def translator(net):
     assert type(net) == type([])
     updated_design = {}
 
-    r = net[0]
-    q = net[1:7]
-    c = net[7:13]
-    p = net[13:]
-
-    # num of layer repetitions
-    layer_repe = [5, 7]
-    updated_design['layer_repe'] = layer_repe[r]
+    q = net[0:6]
+    p = net[6:]
 
     # categories of single-qubit parametric gates
     for i in range(args.n_qubits):
@@ -40,7 +34,7 @@ def translator(net):
         category = 'IsingZZ'
         updated_design['enta' + str(j)] = (category, [j, p[j]])
 
-    updated_design['total_gates'] = len(q) + len(c)
+    updated_design['total_gates'] = len(q)
     return updated_design
 
 
@@ -54,21 +48,16 @@ dev = qml.device("lightning.qubit", wires=args.n_qubits)
 
 def quantum_net(q_params, design=None):
     current_design = design
-    q_weights = q_params.reshape(current_design['layer_repe'], args.n_qubits, 2)
-    for layer in range(current_design['layer_repe']):
-        # data reuploading
-        # for i in range(args.n_qubits):
-        #     qml.Rot(*q_input_features[i], wires=i)
-        # single-qubit parametric gates and entangled gates
-        for j in range(args.n_qubits):
-            if current_design['rot' + str(j)] == 'Rx':
-                qml.RX(q_weights[layer][j][0], wires=j)
-            else:
-                qml.RY(q_weights[layer][j][0], wires=j)
-            if current_design['enta' + str(j)][0] == 'IsingZZ':
-                qml.IsingZZ(q_weights[layer][j][1], wires=current_design['enta' + str(j)][1])
+    q_weights = q_params.reshape(args.n_qubits, 2)
 
-    # return [qml.expval(qml.PauliZ(i)) for i in range(args.n_qubits)]
+    for j in range(args.n_qubits):
+        if current_design['rot' + str(j)] == 'Rx':
+            qml.RX(q_weights[j][0], wires=j)
+        else:
+            qml.RY(q_weights[j][0], wires=j)
+        if current_design['enta' + str(j)][0] == 'IsingZZ':
+            qml.IsingZZ(q_weights[j][1], wires=current_design['enta' + str(j)][1])
+
     return qml.expval(hamiltonian)
 
 
@@ -93,15 +82,15 @@ def Scheme(design):
     else:
         print("using cpu device")
 
-    q_params = 2 * pi * np.random.rand(design['layer_repe'] * args.n_qubits * 2)
+    q_params = 2 * pi * np.random.rand(args.n_qubits * 2)
     energy = workflow(q_params, args.ntrials, design)
 
     return energy
 
 
 if __name__ == '__main__':
-    net = [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 2, 1, 1]
+    net = [0, 1, 0, 1, 1, 0, 2, 5, 1, 2, 3, 3]
     design = translator(net)
-    q_params = 2 * pi * np.random.rand(design['layer_repe'] * args.n_qubits * 2)
+    q_params = 2 * pi * np.random.rand(args.n_qubits * 2)
     best_model = Scheme(design)
     print(best_model)

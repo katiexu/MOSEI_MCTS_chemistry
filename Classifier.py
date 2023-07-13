@@ -32,23 +32,23 @@ class Classifier:
         self.epochs           = 10000
         self.boundary         = -1
         self.nets             = None
-        self.maeinv           = None
+        self.energyabs        = None
 
 
     def update_samples(self, latest_samples):
         assert type(latest_samples) == type(self.samples)
         sampled_nets = []
-        nets_energy  = []
+        nets_energyabs = []
         for k, v in latest_samples.items():
             net = json.loads(k)
             sampled_nets.append(net)
-            nets_energy.append(v)
+            nets_energyabs.append(v)
         self.nets = torch.from_numpy(np.asarray(sampled_nets, dtype=np.float32).reshape(-1, self.input_dim))
-        self.energy = torch.from_numpy(np.asarray(nets_energy, dtype=np.float32).reshape(-1, 1))
+        self.energyabs = torch.from_numpy(np.asarray(nets_energyabs, dtype=np.float32).reshape(-1, 1))
         self.samples = latest_samples
         if torch.cuda.is_available():
             self.nets = self.nets.cuda()
-            self.energy = self.energy.cuda()
+            self.energyabs = self.energyabs.cuda()
 
 
     def train(self):
@@ -62,12 +62,12 @@ class Classifier:
             return
         for epoch in range(self.epochs):
             nets = self.nets
-            energy = self.energy
+            energyabs = self.energyabs
             # clear grads
             self.optimizer.zero_grad()
             # forward to get predicted values
             outputs = self.model(nets)
-            loss = nn.MSELoss()(outputs, energy)
+            loss = nn.MSELoss()(outputs, energyabs)
             loss.backward()  # back props
             nn.utils.clip_grad_norm_(self.model.parameters(), 5)
             self.optimizer.step()  # update the parameters
@@ -102,10 +102,10 @@ class Classifier:
         if len(remaining) == 0:
             return samples_goodies, samples_badness
         predictions = self.predict(remaining)
-        avg_energy  = self.sample_mean()
-        self.boundary = avg_energy
+        avg_energyabs  = self.sample_mean()
+        self.boundary = avg_energyabs
         for k, v in predictions.items():
-            if v < avg_energy:
+            if v < avg_energyabs:
                 samples_badness[k] = v
             else:
                 samples_goodies[k] = v
@@ -116,7 +116,7 @@ class Classifier:
     def sample_mean(self):
         if len(self.nets) == 0:
             return 0
-        outputs = self.energy
+        outputs = self.energyabs
         true_np = None
         if torch.cuda.is_available():
             true_np = outputs.cpu().numpy()
@@ -141,10 +141,10 @@ class Classifier:
             arch_str = json.dumps(arch.tolist())
             predictions[arch_str] = outputs[k].detach().numpy().tolist()[0]
         assert len(predictions) == len(self.nets)
-        avg_energy = self.sample_mean()
-        self.boundary = avg_energy
+        avg_energyabs = self.sample_mean()
+        self.boundary = avg_energyabs
         for k, v in predictions.items():
-            if v < avg_energy:
+            if v < avg_energyabs:
                 samples_badness[k] = self.samples[k]
             else:
                 samples_goodies[k] = self.samples[k]

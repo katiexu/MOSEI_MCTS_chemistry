@@ -66,7 +66,7 @@ def workflow(q_params, ntrials, design):
 
     for n in range(ntrials):
         q_params, prev_energy = opt.step_and_cost(quantum_net, q_params, design=design)
-        print(f"--- Step: {n}, Energy: {quantum_net(q_params, design=design):.8f}")
+        # print(f"--- Step: {n}, Energy: {quantum_net(q_params, design=design):.8f}")
 
     return quantum_net(q_params, design=design)
 
@@ -76,21 +76,29 @@ def workflow(q_params, ntrials, design):
 
 
 def Scheme(design):
+    np.random.seed(42)
+
     args = Arguments()
     if torch.cuda.is_available() and args.device == 'cuda':
         print("using cuda device")
     else:
         print("using cpu device")
 
-    q_params = 2 * pi * np.random.rand(args.n_qubits * 2)
-    energy = workflow(q_params, args.ntrials, design)
+    total_energy = 0
+    for repe in range(1, 11):
+        # print("get energy repe times: {}".format(repe))
+        q_params = 2 * pi * np.random.rand(args.n_qubits * 2)
+        energy = workflow(q_params, args.ntrials, design)
+        # print("energy: {}".format(energy))
+        total_energy += energy
+    avg_energy = total_energy/repe
 
-    return energy
+    return avg_energy
 
 
 if __name__ == '__main__':
     net = [0, 1, 0, 1, 1, 0, 2, 5, 1, 2, 3, 3]
     design = translator(net)
     q_params = 2 * pi * np.random.rand(args.n_qubits * 2)
-    best_model = Scheme(design)
-    print(best_model)
+    avg_energy = Scheme(design)
+    print("avg energy: {}".format(avg_energy))

@@ -24,34 +24,34 @@ def num2ord(num):
 
 class MCTS:
     def __init__(self, search_space, tree_height, arch_code_len):
-        assert type(search_space) == type([])
-        assert len(search_space) >= 1
+        assert type(search_space)    == type([])
+        assert len(search_space)     >= 1
         assert type(search_space[0]) == type([])
 
-        self.search_space = search_space
-        self.ARCH_CODE_LEN = arch_code_len
-        self.ROOT = None
-        self.Cp = 0.5
-        self.nodes = []
-        self.samples = {}
-        self.TASK_QUEUE = []
+        self.search_space   = search_space
+        self.ARCH_CODE_LEN  = arch_code_len
+        self.ROOT           = None
+        self.Cp             = 0.5
+        self.nodes          = []
+        self.samples        = {}
+        self.TASK_QUEUE     = []
         self.DISPATCHED_JOB = {}
         self.energy_list = []
-        self.JOB_COUNTER = 0
-        self.TOTAL_SEND = 0
-        self.TOTAL_RECV = 0
-        self.ITERATION = 0
+        self.JOB_COUNTER    = 0
+        self.TOTAL_SEND     = 0
+        self.TOTAL_RECV     = 0
+        self.ITERATION      = 0
         self.MAX_ENERGYABS = 0
         self.MAX_SAMPNUM = 0
-        self.sample_nodes = []
+        self.sample_nodes   = []
 
         # initialize a full tree
-        total_nodes = 2 ** tree_height - 1
+        total_nodes = 2**tree_height - 1
         for i in range(1, total_nodes + 1):
             is_good_kid = False
-            if (i - 1) > 0 and (i - 1) % 2 == 0:
+            if (i-1) > 0 and (i-1) % 2 == 0:
                 is_good_kid = False
-            if (i - 1) > 0 and (i - 1) % 2 == 1:
+            if (i-1) > 0 and (i-1) % 2 == 1:
                 is_good_kid = True
 
             parent_id = i // 2 - 1
@@ -76,7 +76,7 @@ class MCTS:
 
     def dump_all_states(self, num_samples):
         node_path = 'states/mcts_agent'
-        with open(node_path + '_' + str(num_samples), 'wb') as outfile:
+        with open(node_path+'_'+str(num_samples), 'wb') as outfile:
             pickle.dump(self, outfile)
 
     def reset_node_data(self):
@@ -112,10 +112,10 @@ class MCTS:
         self.CURT = self.ROOT
 
     def print_tree(self):
-        print('\n' + '-' * 100)
+        print('\n'+'-'*100)
         for i in self.nodes:
             print(i)
-        print('-' * 100)
+        print('-'*100)
 
     def select(self):
         self.reset_to_root()
@@ -132,7 +132,7 @@ class MCTS:
         while len(self.TASK_QUEUE) > 0:
             job = self.TASK_QUEUE.pop()
             sample_node = self.sample_nodes.pop()
-
+            
             try:
                 print("\nget job from QUEUE:", job)
 
@@ -159,11 +159,11 @@ class MCTS:
 
                 print("current min_energy: {}({} sample)".format((-1)*(self.MAX_ENERGYABS), num2ord(self.MAX_SAMPNUM)))
                 print("current number of samples: {}".format(len(self.samples)))
-
+                      
             except Exception as e:
                 print(e)
-                print(traceback.format_exc())
                 self.TASK_QUEUE.append(job)
+                print(traceback.format_exc())
                 self.sample_nodes.append(sample_node)
                 print("current queue length:", len(self.TASK_QUEUE))
 
@@ -211,30 +211,30 @@ class MCTS:
 
             for i in range(0, 50):
                 # select
-                target_bin = self.select()
+                target_bin   = self.select()
                 sampled_arch = target_bin.sample_arch()
                 # NOTED: the sampled arch can be None
                 if sampled_arch is not None:
-                    # TODO: back-propogate an architecture
-                    # push the arch into task queue
-                    print("\nselected node" + str(target_bin.id - 31) + " in leaf layer")
+                # TODO: back-propogate an architecture
+                # push the arch into task queue
+                    print("\nselected node" + str(target_bin.id-31) + " in leaf layer")
                     print("sampled arch:", sampled_arch)
                     if json.dumps(sampled_arch) not in self.DISPATCHED_JOB:
                         self.TASK_QUEUE.append(sampled_arch)
                         self.search_space.remove(sampled_arch)
-                        self.sample_nodes.append(target_bin.id - 31)
+                        self.sample_nodes.append(target_bin.id-31)
                 else:
                     # trail 1: pick a network from the best leaf
                     for n in self.nodes:
                         if n.is_leaf == True:
                             sampled_arch = n.sample_arch()
                             if sampled_arch is not None:
-                                print("\nselected node" + str(n.id - 31) + " in leaf layer")
+                                print("\nselected node" + str(n.id-31) + " in leaf layer")
                                 print("sampled arch:", sampled_arch)
                                 if json.dumps(sampled_arch) not in self.DISPATCHED_JOB:
                                     self.TASK_QUEUE.append(sampled_arch)
                                     self.search_space.remove(sampled_arch)
-                                    self.sample_nodes.append(n.id - 31)
+                                    self.sample_nodes.append(n.id-31)
                                     break
                             else:
                                 continue
@@ -254,21 +254,64 @@ if __name__ == '__main__':
     print("\nthe length of architecture codes:", arch_code_len)
     print("total architectures:", len(search_space))
 
-    if os.path.isfile('results.csv') == False:
-        with open('results.csv', 'w+', newline='') as res:
-            writer = csv.writer(res)
-            writer.writerow(['sample_id', 'arch_code', 'sample_node', 'energy'])
 
-    node_path = 'mcts_agent'
-    if os.path.isfile(node_path) == True:
+    if os.path.isfile('results_sampling.csv') == False:
+        with open('results_sampling.csv', 'w+', newline='') as res:
+            writer = csv.writer(res)
+            writer.writerow(['sample_node', 'sample_no', 'arch_code', 'energy'])
+            
+    
+    state_path = 'states'
+    files = os.listdir(state_path)
+    if files:
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(state_path, x)))
+        # node_path = os.path.join(state_path, files[-1])
+        node_path = "states/mcts_agent_30000"
         with open(node_path, 'rb') as json_data:
             agent = pickle.load(json_data)
+        agent.search_space = search_space
         print("\nresume searching,", agent.ITERATION, "iterations completed before")
         print("=====>loads:", len(agent.nodes), "nodes")
         print("=====>loads:", len(agent.samples), "samples")
-        print("=====>loads:", len(agent.DISPATCHED_JOB), "dispatched jobs")
-        print("=====>loads:", len(agent.TASK_QUEUE), "task_queue jobs")
-        agent.search()
-    else:
-        agent = MCTS(search_space, 6, arch_code_len)
-        agent.search()
+        print("=====>loads:", len(agent.search_space), "archs")
+        
+        
+    print("\nclear the data in nodes...")
+    agent.reset_node_data()
+    print("finished")
+
+    print("\npopulate prediction data...")
+    agent.populate_prediction_data()
+    print("finished")
+
+    print("\npredict and partition nets in search space...")
+    agent.predict_nodes()
+    agent.check_leaf_bags()
+    print("finished")
+    agent.print_tree()
+    
+    leaf_nodes = []
+    for i in agent.nodes:
+        if i.is_leaf is True:
+            leaf_nodes.append(i)
+    print("there are {} leaf nodes in total".format(len(leaf_nodes)))
+    
+    for j in [0, 4, 8, 12, 16, 20, 24, 28]:  # leaf nodes for sampling
+        for sample_no in range(500):  # the number of nodes needed to be sampled
+            target_bin = leaf_nodes[j]
+            sampled_arch = target_bin.sample_arch()
+            if sampled_arch is not None:
+                print("\nsampled from node", j)
+                print("sample no.{}".format(sample_no))
+                print("sampled arch:", sampled_arch)
+                design = translator(sampled_arch)
+                print("translated to:\n{}".format(design))
+                print("\nstart training:")
+                energy = float(Scheme(design))
+                with open('results_sampling.csv', 'a+', newline='') as res:
+                    writer = csv.writer(res)
+                    writer.writerow([j, sample_no, sampled_arch, energy])
+                print("results of current model saved")
+            else:
+                print("no samples in selected node{}".format(j))
+                break

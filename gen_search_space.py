@@ -6,7 +6,7 @@ import pickle
 random.seed(42)
 
 # size of search space
-N = 100000
+N = 200000
 
 search_space = []
 i = 0

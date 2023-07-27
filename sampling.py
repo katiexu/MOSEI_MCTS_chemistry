@@ -266,7 +266,7 @@ if __name__ == '__main__':
     if files:
         files.sort(key=lambda x: os.path.getmtime(os.path.join(state_path, x)))
         # node_path = os.path.join(state_path, files[-1])
-        node_path = "states/mcts_agent_30000"
+        node_path = 'states/mcts_agent_30000'
         with open(node_path, 'rb') as json_data:
             agent = pickle.load(json_data)
         agent.search_space = search_space

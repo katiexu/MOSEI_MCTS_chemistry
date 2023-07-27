@@ -64,7 +64,6 @@ class MCTS:
         self.CURT = self.ROOT
         self.init_train()
 
-
     def init_train(self):
         for i in range(0, 200):
             net = random.choice(self.search_space)
@@ -166,7 +165,6 @@ class MCTS:
                 self.TASK_QUEUE.append(job)
                 self.sample_nodes.append(sample_node)
                 print("current queue length:", len(self.TASK_QUEUE))
-
 
     def search(self):
 
